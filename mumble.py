@@ -6,28 +6,25 @@ import random
 import sys
 
 def mumble_once(word):
-    for x in range(0,100):
-        os.system("zgrep -i -w '^{word}' /gpfs/gpfsfpo/bigram_{num}.csv.zip > /gpfs/gpfsfpo/test.csv".format(num=x,word=word))
-	test_df = pd.read_csv("/gpfs/gpfsfpo/test.csv",sep=" ",names=['ngram','second_word','quantity'])
-	
-	if x == 0:
-	    final_df = test_df
-        else:
-	    final_df = pd.concat([final_df,test_df])
+    first_letter = word[0]
+    os.system("zgrep -i -w '^{word}' /gpfs/gpfsfpo/preprocess_2/words_{first_letter}.csv.zip > \
+              /gpfs/gpfsfpo/test.csv".format(first_letter=first_letter,word=word))
+    final_df = pd.read_csv("/gpfs/gpfsfpo/test.csv",sep=" ",names=['ngram','second_word','quantity'])
 
     final_df['ngram'] = final_df['ngram'].str.lower()
     final_df['second_word'] = final_df['second_word'].str.lower()
     final_df = final_df.groupby(['ngram','second_word']).agg({'quantity':'sum'}).reset_index()
     final_df['quantity'] = final_df['quantity'].astype(int)
-    
+
     if final_df.shape[0]==0:
         print("No words match, exiting")
         return False
     else:
         mumbler = dict(zip(final_df['second_word'].tolist(),final_df['quantity'].tolist()))
-	new_word = pick_new_word(mumbler)
+        new_word = pick_new_word(mumbler)
     return new_word
-    
+
+ 
 def pick_new_word(options):
     total=sum(options.values())
     selection = random.randint(1,total)
